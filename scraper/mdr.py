@@ -157,7 +157,7 @@ def scrape_streams(show, title, url):
                 streams[match.group(1)] = stream
 
         url_large = streams.get('XL')
-        url_medium = streams.get('L+', streams.get('L'))
+        url_medium = streams.get('L', streams.get('L+'))
         url_small = streams.get('M')
         
         return [(player, 'MDR', show, title, date, time, duration, description, url_web, url_large, url_medium, url_small)]
@@ -176,3 +176,14 @@ def scrape_mdr():
     streams = chain.from_iterable(executor.map(lambda broadcast: scrape_streams(*broadcast), broadcasts))
 
     return list(streams)
+
+if __name__ == '__main__':
+    import csv
+    import sys
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    writer = csv.writer(sys.stdout)
+
+    for stream in scrape_mdr():
+        writer.writerow(stream)
