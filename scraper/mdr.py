@@ -12,10 +12,7 @@ from net import get_url
 def add_url_prefix(url):
     prefix = 'http://www.mdr.de'
 
-    if url.startswith(prefix):
-        return url
-
-    return prefix + url
+    return url if url.startswith(prefix) else prefix + url
 
 
 def scrape_letters():

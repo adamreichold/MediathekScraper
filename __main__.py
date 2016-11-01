@@ -4,12 +4,20 @@ import subprocess
 from concurrent import futures
 from datetime import datetime
 from itertools import chain
+from os import path
 
 from dottorrent import Torrent
 
 import db
 
 from scraper.mdr import scrape_mdr
+
+
+csv_dir = '/var/tmp/csv'
+www_dir = '/var/tmp/www'
+qbt_dir = '/var/tmp/qbt'
+
+tracker_url = 'http://localhost:9000/announce'
 
 
 def call_scraper(scraper):
@@ -35,7 +43,7 @@ if __name__ == '__main__':
     # Export streams to CSV file
     today = datetime.today()
 
-    file_name = '/var/tmp/csv/mediathek-{:%Y%m%d-%H%M%S}.csv'.format(today)
+    file_name = path.join(csv_dir, 'mediathek-{:%Y%m%d-%H%M%S}.csv'.format(today))
 
     with open(file_name, mode='w', newline='') as csv_file:
         db.export_streams(csv_file)
@@ -48,7 +56,7 @@ if __name__ == '__main__':
     logging.info("Exported streams to '%s'.", file_name)
 
     # Create torrent of compressed CSV file
-    torrent = Torrent(path=file_name, trackers=['http://localhost:9000/announce'], creation_date=today)
+    torrent = Torrent(path=file_name, trackers=[tracker_url], creation_date=today)
     torrent.generate()
 
     file_name += '.torrent'
@@ -56,8 +64,8 @@ if __name__ == '__main__':
     with open(file_name, mode='wb') as torrent_file:
         torrent.save(torrent_file)
 
-    subprocess.check_call(['ln', file_name, '/var/tmp/qbt'])
-
-    subprocess.check_call(['ln', '-f', file_name, '/var/tmp/www/mediathek.csv.xz.torrent'])
-
     logging.info("Created torrent at '%s'.", file_name)
+
+    # Publish torrent via HTTP and qBt
+    subprocess.check_call(['ln', '-f', file_name, path.join(www_dir, 'mediathek.csv.xz.torrent')])
+    subprocess.check_call(['ln', file_name, qbt_dir])
