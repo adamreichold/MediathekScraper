@@ -145,7 +145,32 @@ def get_url_web_prefixes(cursor):
             prefixes[(channel, topic)] = get_url_web_prefix_for_topic(cursor, channel, topic)
 
     return prefixes
-    
+
+
+def get_url_prefix(url_large, url_medium, url_small):
+    domain = []
+
+    if url_large:
+        domain.append(url_large)
+
+    if url_medium:
+        domain.append(url_medium)
+
+    if url_small:
+        domain.append(url_small)
+
+    prefix = min(domain, key=len)
+
+    while len(prefix) > 0:
+        for value in domain:
+            if not value.startswith(prefix):
+                prefix = prefix[:-1]
+                break
+        else:
+            break
+
+    return prefix
+
 
 def init_database():
     global connection
@@ -205,6 +230,9 @@ def export_streams(file):
     def strip_topic_prefix(url):
         return url[len(curr_channel_prefix) + len(curr_topic_prefix):] if url else url
 
+    def strip_prefix(url_prefix, url):
+        return url[len(curr_channel_prefix) + len(curr_topic_prefix) + len(url_prefix):] if url else url
+
     web_prefixes = get_url_web_prefixes(cursor)
     curr_channel_web_prefix = None
     curr_topic_web_prefix = None
@@ -241,8 +269,13 @@ def export_streams(file):
         
         url_web = strip_topic_web_prefix(row[7])
 
-        url_large = strip_topic_prefix(row[8])            
-        url_medium = strip_topic_prefix(row[9])            
-        url_small = strip_topic_prefix(row[10])
+        url_large, url_medium, url_small = row[8], row[9], row[10]
 
-        writer.writerow((channel, channel_prefix, channel_web_prefix, topic, topic_prefix, topic_web_prefix, title, date, time, duration, description, url_web, url_large, url_medium, url_small))
+        url_prefix = get_url_prefix(url_large, url_medium, url_small)
+        url_prefix = strip_topic_prefix(url_prefix)
+
+        url_large = strip_prefix(url_prefix, url_large)
+        url_medium = strip_prefix(url_prefix, url_medium)
+        url_small = strip_prefix(url_prefix, url_small)
+
+        writer.writerow((channel, channel_prefix, channel_web_prefix, topic, topic_prefix, topic_web_prefix, title, date, time, duration, description, url_web, url_prefix, url_large, url_medium, url_small))
