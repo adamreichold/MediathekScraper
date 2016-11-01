@@ -225,23 +225,28 @@ def export_streams(file):
     curr_topic_prefix = None
 
     def strip_channel_prefix(url):
+        assert not url or url.startswith(curr_channel_prefix), "URL does not match current channel prefix: '%s' '%s'" % (url, curr_channel_prefix)
         return url[len(curr_channel_prefix):] if url else url
 
     def strip_topic_prefix(url):
-        return url[len(curr_channel_prefix) + len(curr_topic_prefix):] if url else url
+        assert not url or url.startswith(curr_topic_prefix), "URL does not match current topic prefix: '%s' '%s'" % (url, curr_topic_prefix)
+        return url[len(curr_topic_prefix):] if url else url
 
     def strip_prefix(url_prefix, url):
-        return url[len(curr_channel_prefix) + len(curr_topic_prefix) + len(url_prefix):] if url else url
+        assert not url or url.startswith(url_prefix), "URL does not match prefix: '%s' '%s'" % (url, url_prefix)
+        return url[len(url_prefix):] if url else url
 
     web_prefixes = get_url_web_prefixes(cursor)
     curr_channel_web_prefix = None
     curr_topic_web_prefix = None
 
     def strip_channel_web_prefix(url):
+        assert not url or url.startswith(curr_topic_web_prefix), "URL does not match current channel web prefix: '%s' '%s'" % (url, curr_topic_web_prefix)
         return url[len(curr_channel_web_prefix):] if url else url
 
     def strip_topic_web_prefix(url):
-        return url[len(curr_channel_web_prefix) + len(curr_topic_web_prefix):] if url else url
+        assert not url or url.startswith(curr_topic_web_prefix), "URL does not match current topic web prefix: '%s' '%s'" % (url, curr_topic_web_prefix)
+        return url[len(curr_topic_web_prefix):] if url else url
 
     writer = csv.writer(file)
 
@@ -269,13 +274,14 @@ def export_streams(file):
         
         url_web = strip_topic_web_prefix(row[7])
 
-        url_large, url_medium, url_small = row[8], row[9], row[10]
-
+        url_large = row[8]
+        url_medium = row[9]
+        url_small = row[10]
         url_prefix = get_url_prefix(url_large, url_medium, url_small)
-        url_prefix = strip_topic_prefix(url_prefix)
 
         url_large = strip_prefix(url_prefix, url_large)
         url_medium = strip_prefix(url_prefix, url_medium)
         url_small = strip_prefix(url_prefix, url_small)
+        url_prefix = strip_topic_prefix(url_prefix)
 
         writer.writerow((channel, channel_prefix, channel_web_prefix, topic, topic_prefix, topic_web_prefix, title, date, time, duration, description, url_web, url_prefix, url_large, url_medium, url_small))
